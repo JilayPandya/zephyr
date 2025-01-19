@@ -162,6 +162,11 @@ Entropy
 GNSS
 ====
 
+HWSPINLOCK
+==========
+
+* Renamed the DeviceTree property ``num_locks`` to ``num-locks``.
+
 I2C
 ===
 
