@@ -119,6 +119,34 @@ static void adltc2990_4_3_before(void *f)
 
 ZTEST_SUITE(adltc2990_4_3, NULL, adltc2990_4_3_setup, adltc2990_4_3_before, NULL, NULL);
 
+ZTEST_F(adltc2990_4_3, test_mock_i2c_error)
+{
+	bool is_busy;
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_STATUS);
+	zassert_equal(-EIO, adltc2990_is_busy(fixture->dev, &is_busy), "I2C Error not detected");
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_TRIGGER);
+	zassert_equal(-EIO,
+		      adltc2990_trigger_measurement(fixture->dev, ADLTC2990_REPEATED_ACQUISITION));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_CONTROL);
+	zassert_equal(-EIO, adltc2990_trigger_measurement(fixture->dev,
+							  ADLTC2990_SINGLE_SHOT_ACQUISITION));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_VCC_LSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V1_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V3_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_CURRENT));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_INTERNAL_TEMP_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_DIE_TEMP));
+}
+
 ZTEST_F(adltc2990_4_3, test_available_channels)
 {
 	struct sensor_value value[3];
@@ -353,6 +381,18 @@ static void adltc2990_6_3_before(void *f)
 
 ZTEST_SUITE(adltc2990_6_3, NULL, adltc2990_6_3_setup, adltc2990_6_3_before, NULL, NULL);
 
+ZTEST_F(adltc2990_6_3, test_mock_i2c_error)
+{
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_VCC_LSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V1_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V3_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+}
+
 ZTEST_F(adltc2990_6_3, test_current)
 {
 	/* 0b00111100 0b01011000 +0.300 */
@@ -399,6 +439,24 @@ static void adltc2990_7_3_before(void *f)
 }
 
 ZTEST_SUITE(adltc2990_7_3, NULL, adltc2990_7_3_setup, adltc2990_7_3_before, NULL, NULL);
+
+ZTEST_F(adltc2990_7_3, test_mock_i2c_error)
+{
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_VCC_LSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V1_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V2_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V3_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+
+	adltc2990_emul_mock_i2c_error(fixture->target, ADLTC2990_REG_V4_MSB);
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+}
 
 ZTEST_F(adltc2990_7_3, test_available_channels)
 {
