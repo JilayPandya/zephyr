@@ -78,12 +78,12 @@ static void decrement_coil_charge(const struct device *dev)
 	}
 }
 
-static int power_down_coils(const struct device *dev)
+static int energize_coils(const struct device *dev, const bool energize)
 {
 	const struct gpio_stepper_config *config = dev->config;
 
 	for (int i = 0; i < NUM_CONTROL_PINS; i++) {
-		const int err = gpio_pin_set_dt(&config->control_pins[i], 0u);
+		const int err = gpio_pin_set_dt(&config->control_pins[i], energize);
 
 		if (err != 0) {
 			LOG_ERR("Failed to power down coil %d", i);
@@ -328,21 +328,46 @@ static int gpio_stepper_enable(const struct device *dev, bool enable)
 {
 	struct gpio_stepper_data *data = dev->data;
 
+	if (data->is_enabled == enable) {
+		return 0;
+	}
+
 	K_SPINLOCK(&data->lock) {
 
 		data->is_enabled = enable;
 
 		if (enable) {
-			(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
+			const int err = energize_coils(dev, true);
+
+			if (err != 0) {
+				return -EIO;
+			}
 		} else {
 			(void)k_work_cancel_delayable(&data->stepper_dwork);
-			const int err = power_down_coils(dev);
+			const int err = energize_coils(dev, false);
 
 			if (err != 0) {
 				return -EIO;
 			}
 		}
 	}
+	return 0;
+}
+
+static int gpio_stepper_stop(const struct device *dev)
+{
+	struct gpio_stepper_data *data = dev->data;
+
+	K_SPINLOCK(&data->lock) {
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
+
+		const int err = energize_coils(dev, true);
+
+		if (err != 0) {
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
